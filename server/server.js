@@ -1,22 +1,16 @@
-import express from "express";
-import dotenv from "dotenv";
-import mongoose from "mongoose";
-import cors from "cors";
-
-import authRoutes from "./routes/authRoutes.js";
-import profileRoutes from "./routes/profileRoutes.js";
+const express = require("express");
+const dotenv = require("dotenv");
 
 dotenv.config();
-const app = express();
 
-app.use(cors());
+const app = express();
 app.use(express.json());
 
-// Routes
-app.use("/api/auth", authRoutes);
-app.use("/api/profile", profileRoutes);
+app.get("/api/health", (req, res) => {
+  res.json({ message: "Backend is running 🚀" });
+});
 
-// MongoDB connection
-mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
-  .then(() => app.listen(5000, () => console.log("Server running on http://localhost:5000")))
-  .catch(err => console.error(err));
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`✅ Server running on http://localhost:${PORT}`);
+});

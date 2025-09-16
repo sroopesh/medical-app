@@ -1,9 +1,17 @@
-import mongoose from "mongoose";
+const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema({
-  phone: { type: String, required: true, unique: true },
+  mobile: {
+    type: String,
+    required: true,
+    unique: true
+  },
   otp: String,
-  otpExpires: Date
+  otpExpiry: Date,
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
 });
 
-export default mongoose.model("User", userSchema);
+module.exports = mongoose.model("User", userSchema);
