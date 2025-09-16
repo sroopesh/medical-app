@@ -1,30 +1,48 @@
-import User from "../models/User.js";
-import jwt from "jsonwebtoken";
-import { sendOTP } from "../utils/otpService.js";
+const User = require("../models/User");
+const { generateOTP } = require("../utils/otpService");
+const { generateToken } = require("../utils/jwtHelper");
 
-export const sendOtp = async (req, res) => {
-  const { phone } = req.body;
-  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+// Send OTP
+exports.sendOTP = async (req, res) => {
+  try {
+    const { mobile } = req.body;
+    if (!mobile) return res.status(400).json({ message: "Mobile number is required" });
 
-  await sendOTP(phone, otp); // external SMS service
+    let user = await User.findOne({ mobile });
+    if (!user) {
+      user = new User({ mobile });
+    }
 
-  let user = await User.findOne({ phone });
-  if (!user) user = new User({ phone });
-  user.otp = otp;
-  user.otpExpires = Date.now() + 5 * 60 * 1000; // 5 min expiry
-  await user.save();
+    const otp = generateOTP();
+    user.otp = otp;
+    user.otpExpiry = Date.now() + 5 * 60 * 1000; // valid for 5 minutes
+    await user.save();
 
-  res.json({ message: "OTP sent!" });
+    console.log(`🔹 OTP for ${mobile}: ${otp}`); // later replace with SMS
+
+    res.json({ message: "OTP sent successfully" });
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
+  }
 };
 
-export const verifyOtp = async (req, res) => {
-  const { phone, otp } = req.body;
-  const user = await User.findOne({ phone });
+// Verify OTP
+exports.verifyOTP = async (req, res) => {
+  try {
+    const { mobile, otp } = req.body;
+    const user = await User.findOne({ mobile });
 
-  if (!user || user.otp !== otp || user.otpExpires < Date.now()) {
-    return res.status(400).json({ message: "Invalid or expired OTP" });
+    if (!user || user.otp !== otp || user.otpExpiry < Date.now()) {
+      return res.status(400).json({ message: "Invalid or expired OTP" });
+    }
+
+    user.otp = null;
+    user.otpExpiry = null;
+    await user.save();
+
+    const token = generateToken(user._id);
+    res.json({ token });
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
   }
-
-  const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "1d" });
-  res.json({ token });
 };
