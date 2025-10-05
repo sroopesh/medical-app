@@ -20,6 +20,9 @@ mongoose.connect(process.env.MONGO_URI, {
 
 // Routes
 app.use("/api/auth", authRoutes);
+const profileRoutes = require("./routes/profileRoutes");
+app.use("/api/profile", profileRoutes);
+
 
 // Test API
 app.get("/api/health", (req, res) => {
