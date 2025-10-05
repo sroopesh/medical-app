@@ -1,36 +1,65 @@
-import { useState } from "react";
-import api from "../api/axios";
+// src/pages/Login.js
+import React, { useState } from "react";
+import api from "../api/axiosConfig";
 
-export default function Login() {
-  const [phone, setPhone] = useState("");
+const Login = () => {
+  const [mobile, setMobile] = useState("");
   const [otp, setOtp] = useState("");
-  const [step, setStep] = useState(1);
+  const [otpSent, setOtpSent] = useState(false);
 
-  const requestOtp = async () => {
-    await api.post("/auth/send-otp", { phone });
-    setStep(2);
+  const handleSendOtp = async () => {
+    try {
+      const res = await api.post("/auth/send-otp", { mobile });
+      alert(res.data.message);
+      setOtpSent(true);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to send OTP");
+    }
   };
 
-  const verifyOtp = async () => {
-    const res = await api.post("/auth/verify-otp", { phone, otp });
-    localStorage.setItem("token", res.data.token);
-    alert("Login successful!");
+  const handleVerifyOtp = async () => {
+    try {
+      const res = await api.post("/auth/verify-otp", { mobile, otp });
+      localStorage.setItem("token", res.data.token); // ✅ store JWT token
+      alert("Login successful!");
+      window.location.href = "/profile"; // redirect to profile page
+    } catch (err) {
+      console.error(err);
+      alert("Invalid OTP");
+    }
   };
 
   return (
-    <div>
-      {step === 1 && (
-        <div>
-          <input type="text" placeholder="Enter phone" value={phone} onChange={e => setPhone(e.target.value)} />
-          <button onClick={requestOtp}>Send OTP</button>
-        </div>
+    <div style={{ textAlign: "center", marginTop: "100px" }}>
+      <h2>Login with Mobile OTP</h2>
+      <input
+        type="text"
+        placeholder="Enter mobile number"
+        value={mobile}
+        onChange={(e) => setMobile(e.target.value)}
+      />
+      {!otpSent && (
+        <button onClick={handleSendOtp} style={{ marginLeft: "10px" }}>
+          Send OTP
+        </button>
       )}
-      {step === 2 && (
-        <div>
-          <input type="text" placeholder="Enter OTP" value={otp} onChange={e => setOtp(e.target.value)} />
-          <button onClick={verifyOtp}>Verify OTP</button>
+
+      {otpSent && (
+        <div style={{ marginTop: "20px" }}>
+          <input
+            type="text"
+            placeholder="Enter OTP"
+            value={otp}
+            onChange={(e) => setOtp(e.target.value)}
+          />
+          <button onClick={handleVerifyOtp} style={{ marginLeft: "10px" }}>
+            Verify OTP
+          </button>
         </div>
       )}
     </div>
   );
-}
+};
+
+export default Login;
